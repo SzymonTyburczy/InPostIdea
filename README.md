@@ -3,6 +3,8 @@
 > **Smart finder & distribution analytics** for InPost's European parcel locker network.  
 > Built with **FastAPI** + **Leaflet.js** + **Chart.js** — a full-stack web application that turns 34,000+ Polish locker data points into an interactive, filterable map and a real-time analytics dashboard.
 
+### 🌐 [Live Demo → inpostidea.onrender.com](https://inpostidea.onrender.com/)
+
 ![Map View](screenshots/stats_and_controls.png)
 
 ---
@@ -24,12 +26,17 @@ On top of that, I added a **distribution analytics dashboard** — because once 
 ### 🗺️ Smart Finder (Map View)
 - **Interactive clustered map** — 34,000+ markers rendered efficiently with Leaflet.js marker clustering
 - **🔥 Heatmap mode** — toggle between markers and density heatmap visualization
+- **🌙 Dark / Light theme** — toggle between dark and light mode, saved in localStorage
 - **Multi-criteria filtering** — filter by 24/7 access, payment availability, easy access zone, indoor/outdoor, operational status
 - **City search with autocomplete** — type a city name, fly to it instantly
 - **Geolocation** — "Find near me" button using browser GPS
-- **📏 Distance & travel time** — after geolocating, see walking and driving time estimates to each locker
+- **📏 Distance & travel time** — walking (🚶 5 km/h) and driving (🚗 30 km/h) estimates to each locker
+- **📍 5 Nearest lockers** — after geolocating, auto-shows the 5 closest lockers sorted by distance
 - **⚖️ Comparison mode** — select up to 3 lockers and compare features side by side
-- **Detail panel** — click any locker to see photo, address, opening hours, locker availability (A/B/C), and a "Navigate with Google Maps" button
+- **⭐ Favorites** — save lockers to favorites (persisted in localStorage)
+- **🔗 Share locker** — copy a direct link to any locker (URL param `?locker=NAME`)
+- **🔔 Watch & notify** — watch a locker’s status, get browser notifications if it changes
+- **Detail panel** — photo, address, opening hours, locker availability (A/B/C), Google Maps navigation
 - **Live stats bar** — real-time counters (Total / Operating / 24/7 / Indoor) on the map
 - **Country switching** — view Poland, Italy, Spain, or all of Europe
 
@@ -39,6 +46,7 @@ On top of that, I added a **distribution analytics dashboard** — because once 
 - **Top 20 cities** — horizontal bar chart of cities with the most lockers
 - **Operational status** — doughnut chart (operating vs non-operating)
 - **Indoor vs Outdoor** — doughnut chart of location types
+- **🏙️ City comparison** — select 2 cities and compare locker stats side by side
 - **Country breakdown** — when viewing all countries
 
 ### ⚡ Performance

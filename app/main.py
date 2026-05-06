@@ -247,6 +247,47 @@ async def api_cities(
     return {"cities": result[:50]}
 
 
+@app.get("/api/cities/compare")
+async def api_city_compare(
+    country: Optional[str] = Query("PL"),
+    city_a: str = Query(..., description="First city"),
+    city_b: str = Query(..., description="Second city"),
+):
+    """Compare two cities side by side — locker counts, features, percentages."""
+    points = await get_all_points_cached(country=country)
+
+    def city_stats(city_name: str) -> dict:
+        city_points = [
+            p for p in points
+            if (p.get("address_details") or {}).get("city", "").lower() == city_name.lower()
+        ]
+        total = len(city_points)
+        if total == 0:
+            return {"name": city_name, "total": 0, "operating": 0, "operating_pct": 0,
+                    "access_247": 0, "access_247_pct": 0, "payment": 0, "payment_pct": 0,
+                    "easy_access": 0, "easy_access_pct": 0, "indoor": 0, "indoor_pct": 0, "outdoor": 0}
+
+        operating = sum(1 for p in city_points if p.get("status") == "Operating")
+        a247 = sum(1 for p in city_points if p.get("location_247"))
+        payment = sum(1 for p in city_points if p.get("payment_available"))
+        easy = sum(1 for p in city_points if p.get("easy_access_zone"))
+        indoor = sum(1 for p in city_points if p.get("location_type") == "Indoor")
+        outdoor = total - indoor
+
+        pct = lambda v: round(v / total * 100, 1) if total else 0
+        return {
+            "name": city_name, "total": total,
+            "operating": operating, "operating_pct": pct(operating),
+            "access_247": a247, "access_247_pct": pct(a247),
+            "payment": payment, "payment_pct": pct(payment),
+            "easy_access": easy, "easy_access_pct": pct(easy),
+            "indoor": indoor, "indoor_pct": pct(indoor),
+            "outdoor": outdoor,
+        }
+
+    return {"city_a": city_stats(city_a), "city_b": city_stats(city_b)}
+
+
 @app.get("/api/status")
 async def api_status():
     """Loading progress endpoint — polled by frontend during startup."""

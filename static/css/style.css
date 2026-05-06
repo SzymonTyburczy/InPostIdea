@@ -24,6 +24,28 @@
     --transition: 0.2s ease;
     --font: 'Inter', -apple-system, sans-serif;
     --navbar-h: 60px;
+    --navbar-bg: rgba(10,14,26,0.85);
+}
+
+/* Light Theme */
+body.light-theme {
+    --bg-primary: #f0f2f5;
+    --bg-secondary: #ffffff;
+    --bg-card: #ffffff;
+    --bg-card-hover: #f8f9fa;
+    --bg-input: #f0f2f5;
+    --text-primary: #1a1a2e;
+    --text-secondary: #4a5568;
+    --text-muted: #718096;
+    --accent: #e6b800;
+    --accent-hover: #d4a800;
+    --accent-glow: rgba(230, 184, 0, 0.12);
+    --success: #22c55e;
+    --danger: #ef4444;
+    --border: #e2e8f0;
+    --border-focus: #e6b800;
+    --shadow: 0 4px 24px rgba(0,0,0,0.08);
+    --navbar-bg: rgba(255,255,255,0.9);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -36,7 +58,7 @@ html, body {
 /* ── Navbar ── */
 .navbar {
     position: fixed; top: 0; left: 0; right: 0; height: var(--navbar-h);
-    background: rgba(10,14,26,0.85); backdrop-filter: blur(20px);
+    background: var(--navbar-bg); backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--border); display: flex; align-items: center;
     padding: 0 24px; z-index: 1000; gap: 24px;
 }
@@ -44,6 +66,14 @@ html, body {
 .logo { color: var(--accent); display: flex; }
 .brand-text { font-weight: 700; font-size: 1.1rem; letter-spacing: -0.02em; }
 .brand-accent { color: var(--accent); }
+.navbar-tabs { display: flex; gap: 4px; }
+.navbar-actions { display: flex; align-items: center; gap: 6px; }
+.theme-toggle {
+    background: none; border: 1px solid var(--border); color: var(--text-secondary);
+    width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex;
+    align-items: center; justify-content: center; transition: var(--transition); font-size: 1.1rem;
+}
+.theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
 .navbar-tabs { display: flex; gap: 4px; }
 .nav-tab {
     display: flex; align-items: center; gap: 6px; padding: 8px 16px;
@@ -351,6 +381,65 @@ html, body {
 .compare-remove:hover { color: var(--danger); }
 
 @keyframes fadeInUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── Nearest Panel ── */
+.nearest-panel {
+    position: absolute; top: 0; left: 340px; bottom: 0; width: 320px; z-index: 490;
+    background: var(--bg-secondary); border-right: 1px solid var(--border);
+    transform: translateX(-200%); transition: transform 0.3s ease; overflow-y: auto;
+}
+.nearest-panel.open { transform: translateX(0); }
+.nearest-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.nearest-header h3 { font-size: 0.95rem; }
+.nearest-list { padding: 8px 0; }
+.nearest-item {
+    padding: 12px 20px; cursor: pointer; border-bottom: 1px solid var(--border);
+    transition: var(--transition); display: flex; align-items: center; gap: 12px;
+}
+.nearest-item:hover { background: var(--bg-card-hover); }
+.nearest-rank { font-size: 1.4rem; font-weight: 800; color: var(--accent); min-width: 28px; }
+.nearest-info { flex: 1; min-width: 0; }
+.nearest-name { font-weight: 600; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.nearest-addr { font-size: 0.75rem; color: var(--text-muted); margin-top: 2px; }
+.nearest-dist { text-align: right; }
+.nearest-dist-val { font-weight: 700; color: var(--accent); font-size: 0.9rem; }
+.nearest-dist-walk { font-size: 0.7rem; color: var(--text-muted); }
+
+/* ── Detail Action Buttons ── */
+.detail-actions { display: flex; gap: 6px; margin-top: 8px; }
+.detail-actions .action-btn {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 8px; background: var(--bg-input); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); font: 500 0.75rem var(--font); color: var(--text-secondary);
+    cursor: pointer; transition: var(--transition);
+}
+.action-btn:hover { border-color: var(--accent); color: var(--accent); }
+.action-btn.active { background: var(--accent-glow); border-color: var(--accent); color: var(--accent); }
+
+/* ── City Comparison ── */
+.city-compare-section { margin-top: 32px; }
+.city-compare-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; }
+.city-compare-header h3 { font-size: 1.1rem; font-weight: 700; }
+.city-compare-header .select { width: 180px; }
+.city-compare-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.city-stat-card {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius);
+    padding: 16px; text-align: center;
+}
+.city-stat-card h4 { font-size: 0.95rem; color: var(--accent); margin-bottom: 12px; }
+.city-stat-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.85rem; border-bottom: 1px solid var(--border); }
+
+/* ── Light Theme Map Tiles ── */
+body.light-theme .leaflet-popup-content-wrapper { background: #fff !important; color: #1a1a2e !important; border-color: #e2e8f0 !important; }
+body.light-theme .leaflet-popup-tip { background: #fff !important; border-color: #e2e8f0 !important; }
+body.light-theme .leaflet-control-zoom a { background: #fff !important; color: #1a1a2e !important; border-color: #e2e8f0 !important; }
+body.light-theme .sidebar { background: rgba(255,255,255,0.95); }
+body.light-theme .detail-panel { background: rgba(255,255,255,0.95); }
+body.light-theme .compare-panel { background: rgba(255,255,255,0.97); }
+body.light-theme .compare-header { background: rgba(255,255,255,0.97); }
+body.light-theme .stats-bar { background: rgba(255,255,255,0.9); }
+body.light-theme .map-controls { background: rgba(255,255,255,0.9); }
+body.light-theme .loading-overlay { background: #f0f2f5; }
 
 /* ── Leaflet overrides ── */
 .leaflet-popup-content-wrapper { background: var(--bg-card) !important; color: var(--text-primary) !important; border-radius: var(--radius-sm) !important; border: 1px solid var(--border) !important; box-shadow: var(--shadow) !important; }

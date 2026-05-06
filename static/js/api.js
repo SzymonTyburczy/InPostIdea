@@ -34,4 +34,11 @@ const API = {
         if (!res.ok) throw new Error(`API error: ${res.status}`);
         return res.json();
     },
+
+    async getCityComparison(country, cityA, cityB) {
+        const qs = new URLSearchParams({ country, city_a: cityA, city_b: cityB });
+        const res = await fetch(`${this.BASE}/api/cities/compare?${qs}`);
+        if (!res.ok) throw new Error(`API error: ${res.status}`);
+        return res.json();
+    },
 };
