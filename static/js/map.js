@@ -229,8 +229,11 @@ const MapModule = (() => {
 
         const sizeLabels = { A:'Small (A)', B:'Medium (B)', C:'Large (C)' };
         const availHTML = Object.entries(details).map(([s, st]) => {
-            const cls = st === 'Available' ? 'badge-success' : st === 'Full' ? 'badge-danger' : 'badge-warning';
-            return `<div class="detail-row"><span class="label">${sizeLabels[s]||s}</span><span class="badge ${cls}">${st}</span></div>`;
+            let cls, label;
+            if (st === 'Available') { cls = 'badge-success'; label = 'Available'; }
+            else if (st === 'Full') { cls = 'badge-danger'; label = 'Full'; }
+            else { cls = 'badge-muted'; label = 'No live data'; }
+            return `<div class="detail-row"><span class="label">${sizeLabels[s]||s}</span><span class="badge ${cls}">${label}</span></div>`;
         }).join('');
 
         const imgUrl = point.image_url || '';
@@ -351,5 +354,17 @@ const MapModule = (() => {
         });
     }
 
-    return { init, loadPoints, flyTo, showUserLocation, getUserPosition, invalidateSize, setTileTheme };
+    function searchAndFly(name) {
+        const p = currentPoints.find(pt => pt.name === name);
+        if (p && p.location) {
+            showDetail(p);
+            flyTo(p.location.latitude, p.location.longitude, 16);
+            return true;
+        }
+        return false;
+    }
+
+    function getPoints() { return currentPoints; }
+
+    return { init, loadPoints, flyTo, showUserLocation, getUserPosition, invalidateSize, setTileTheme, searchAndFly, getPoints };
 })();

@@ -41,4 +41,17 @@ const API = {
         if (!res.ok) throw new Error(`API error: ${res.status}`);
         return res.json();
     },
+
+    async getDistricts(country = 'PL') {
+        const res = await fetch(`${this.BASE}/api/districts?country=${country}`);
+        if (!res.ok) throw new Error(`API error: ${res.status}`);
+        return res.json();
+    },
+
+    async searchLocker(q, country = 'PL') {
+        const qs = new URLSearchParams({ q, country });
+        const res = await fetch(`${this.BASE}/api/points/search?${qs}`);
+        if (!res.ok) throw new Error(`API error: ${res.status}`);
+        return res.json();
+    },
 };

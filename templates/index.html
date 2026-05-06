@@ -80,6 +80,15 @@
                     </div>
                 </div>
 
+                <!-- Locker ID Search -->
+                <div class="filter-section">
+                    <label class="filter-label" for="search-locker">Search locker ID</label>
+                    <div class="locker-search-wrap">
+                        <input type="text" id="search-locker" class="input" placeholder="e.g. KRA389M, WAW..." autocomplete="off">
+                        <div class="locker-search-results" id="locker-search-results"></div>
+                    </div>
+                </div>
+
                 <!-- Country -->
                 <div class="filter-section">
                     <label class="filter-label" for="filter-country">Country</label>
@@ -298,6 +307,15 @@
                     <button class="btn btn-primary" id="btn-compare-cities" style="padding:8px 16px;font-size:0.8rem">Compare</button>
                 </div>
                 <div class="city-compare-grid" id="city-compare-grid"></div>
+            </div>
+
+            <!-- District Ranking -->
+            <div class="district-section">
+                <div class="chart-card-header">
+                    <h3>🏆 Province Ranking</h3>
+                    <button class="btn-export" id="btn-export-csv" title="Export all locker data as CSV">📥 Export CSV</button>
+                </div>
+                <div id="district-ranking-table"></div>
             </div>
         </div>
     </main>

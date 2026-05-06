@@ -288,6 +288,63 @@ async def api_city_compare(
     return {"city_a": city_stats(city_a), "city_b": city_stats(city_b)}
 
 
+@app.get("/api/districts")
+async def api_districts(
+    country: Optional[str] = Query("PL"),
+    city: Optional[str] = Query(None, description="Filter by city for district ranking"),
+):
+    """Province/district ranking — sorted by locker count with feature breakdown."""
+    points = await get_all_points_cached(country=country)
+
+    # Group by province (or by city for district-level)
+    groups = {}
+    for p in points:
+        addr = p.get("address_details") or {}
+        if city:
+            if addr.get("city", "").lower() != city.lower():
+                continue
+            key = addr.get("province", "Unknown")
+        else:
+            key = addr.get("province", "Unknown")
+
+        if not key or key == "Unknown":
+            continue
+
+        if key not in groups:
+            groups[key] = {"name": key, "total": 0, "operating": 0, "a247": 0,
+                           "payment": 0, "easy_access": 0, "indoor": 0, "outdoor": 0}
+        g = groups[key]
+        g["total"] += 1
+        if p.get("status") == "Operating": g["operating"] += 1
+        if p.get("location_247"): g["a247"] += 1
+        if p.get("payment_available"): g["payment"] += 1
+        if p.get("easy_access_zone"): g["easy_access"] += 1
+        if p.get("location_type") == "Indoor": g["indoor"] += 1
+        else: g["outdoor"] += 1
+
+    # Sort by total descending
+    ranked = sorted(groups.values(), key=lambda x: x["total"], reverse=True)
+    for i, r in enumerate(ranked):
+        r["rank"] = i + 1
+        t = r["total"]
+        r["operating_pct"] = round(r["operating"] / t * 100, 1) if t else 0
+        r["a247_pct"] = round(r["a247"] / t * 100, 1) if t else 0
+
+    return {"districts": ranked, "total_districts": len(ranked)}
+
+
+@app.get("/api/points/search")
+async def api_search_point(
+    q: str = Query(..., description="Locker ID or name to search"),
+    country: Optional[str] = Query("PL"),
+):
+    """Search for a specific locker by name/ID (e.g., KRA389M)."""
+    points = await get_all_points_cached(country=country)
+    q_upper = q.upper().strip()
+    results = [p for p in points if q_upper in (p.get("name") or "").upper()]
+    return {"results": results[:20], "total": len(results)}
+
+
 @app.get("/api/status")
 async def api_status():
     """Loading progress endpoint — polled by frontend during startup."""

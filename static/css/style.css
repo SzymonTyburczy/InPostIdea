@@ -224,6 +224,7 @@ html, body {
 .badge-warning { background: rgba(251,191,36,0.15); color: #fbbf24; }
 .badge-danger { background: rgba(248,113,113,0.15); color: var(--danger); }
 .badge-info { background: rgba(96,165,250,0.15); color: #60a5fa; }
+.badge-muted { background: rgba(90,101,128,0.15); color: var(--text-muted); font-style: italic; }
 .detail-section { margin-bottom: 16px; }
 .detail-section h4 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 8px; }
 .detail-row { display: flex; justify-content: space-between; padding: 6px 0; font-size: 0.85rem; border-bottom: 1px solid var(--border); }
@@ -441,7 +442,51 @@ body.light-theme .stats-bar { background: rgba(255,255,255,0.9); }
 body.light-theme .map-controls { background: rgba(255,255,255,0.9); }
 body.light-theme .loading-overlay { background: #f0f2f5; }
 
-/* ── Leaflet overrides ── */
+/* ── Locker ID Search ── */
+.locker-search-wrap { position: relative; }
+.locker-search-results {
+    position: absolute; top: calc(100% + 4px); left: 0; right: 0;
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    max-height: 220px; overflow-y: auto; display: none; z-index: 100;
+}
+.locker-search-results.open { display: block; }
+.locker-result {
+    padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--border);
+    transition: var(--transition); font-size: 0.85rem;
+}
+.locker-result:hover { background: var(--bg-card-hover); }
+.locker-result .locker-id { font-weight: 700; color: var(--accent); }
+.locker-result .locker-addr { font-size: 0.75rem; color: var(--text-muted); }
+
+/* ── District Ranking ── */
+.district-section { margin-top: 32px; }
+.district-table { width: 100%; border-collapse: collapse; }
+.district-table th {
+    text-align: left; padding: 10px 12px; font-size: 0.75rem; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.04em; color: var(--text-muted);
+    border-bottom: 2px solid var(--border);
+}
+.district-table td {
+    padding: 10px 12px; font-size: 0.85rem; border-bottom: 1px solid var(--border);
+}
+.district-rank { font-weight: 800; color: var(--accent); }
+.district-bar {
+    height: 6px; background: var(--accent-glow); border-radius: 3px; overflow: hidden;
+}
+.district-bar-fill { height: 100%; background: var(--accent); border-radius: 3px; transition: width 0.5s ease; }
+
+/* ── Export Button ── */
+.btn-export {
+    display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px;
+    background: var(--bg-input); border: 1px solid var(--border); border-radius: var(--radius-sm);
+    font: 500 0.75rem var(--font); color: var(--text-secondary); cursor: pointer;
+    transition: var(--transition);
+}
+.btn-export:hover { border-color: var(--accent); color: var(--accent); }
+.chart-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.chart-card-header h3 { margin-bottom: 0; }
+
+
 .leaflet-popup-content-wrapper { background: var(--bg-card) !important; color: var(--text-primary) !important; border-radius: var(--radius-sm) !important; border: 1px solid var(--border) !important; box-shadow: var(--shadow) !important; }
 .leaflet-popup-tip { background: var(--bg-card) !important; border: 1px solid var(--border) !important; }
 .leaflet-popup-content { font-family: var(--font) !important; font-size: 0.85rem !important; }

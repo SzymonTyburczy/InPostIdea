@@ -1,6 +1,7 @@
 /**
  * App — main orchestrator.
- * Theme toggle, progress polling, city comparison, navigation.
+ * Theme toggle, progress polling, city comparison, locker search,
+ * district ranking, CSV/PNG export.
  */
 document.addEventListener('DOMContentLoaded', () => {
     const overlay = document.getElementById('loading-overlay');
@@ -46,6 +47,54 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // ── Locker ID Search ──
+    const lockerInput = document.getElementById('search-locker');
+    const lockerResults = document.getElementById('locker-search-results');
+    let lockerDebounce = null;
+
+    lockerInput.addEventListener('input', () => {
+        clearTimeout(lockerDebounce);
+        const q = lockerInput.value.trim();
+        if (q.length < 2) { lockerResults.classList.remove('open'); return; }
+
+        lockerDebounce = setTimeout(async () => {
+            try {
+                const data = await API.searchLocker(q);
+                if (!data.results.length) {
+                    lockerResults.innerHTML = '<div class="locker-result"><span class="locker-addr">No lockers found</span></div>';
+                    lockerResults.classList.add('open');
+                    return;
+                }
+                lockerResults.innerHTML = data.results.map(p => {
+                    const addr = p.address_details || {};
+                    return `<div class="locker-result" data-name="${p.name}">
+                        <div class="locker-id">${p.name}</div>
+                        <div class="locker-addr">${addr.street || ''} ${addr.building_number || ''}, ${addr.city || ''}</div>
+                    </div>`;
+                }).join('');
+                lockerResults.classList.add('open');
+
+                lockerResults.querySelectorAll('.locker-result[data-name]').forEach(el => {
+                    el.addEventListener('click', () => {
+                        const name = el.dataset.name;
+                        lockerResults.classList.remove('open');
+                        lockerInput.value = name;
+                        if (!MapModule.searchAndFly(name)) {
+                            // If not found client-side, try via API response
+                            const data2 = MapModule.getPoints();
+                            const p = data2.find(pt => pt.name === name);
+                            if (p && p.location) MapModule.flyTo(p.location.latitude, p.location.longitude, 16);
+                        }
+                    });
+                });
+            } catch (err) { console.error('Locker search failed:', err); }
+        }, 300);
+    });
+
+    lockerInput.addEventListener('blur', () => {
+        setTimeout(() => lockerResults.classList.remove('open'), 200);
+    });
+
     // ── Analytics ──
     let analyticsLoaded = false;
     async function loadAnalytics() {
@@ -55,6 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await Analytics.load(country);
             analyticsLoaded = true;
             await loadCityDropdowns(country);
+            await loadDistrictRanking(country);
         } catch (err) { console.error('Analytics load failed:', err); }
     }
 
@@ -63,6 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
         await Analytics.load(e.target.value);
         analyticsLoaded = true;
         await loadCityDropdowns(e.target.value);
+        await loadDistrictRanking(e.target.value);
     });
 
     // ── City Comparison ──
@@ -105,6 +156,85 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `).join('');
     }
+
+    // ── District Ranking ──
+    async function loadDistrictRanking(country) {
+        try {
+            const data = await API.getDistricts(country || 'PL');
+            const districts = data.districts || [];
+            const maxTotal = districts.length ? districts[0].total : 1;
+            const container = document.getElementById('district-ranking-table');
+
+            container.innerHTML = `<table class="district-table">
+                <thead><tr>
+                    <th>#</th><th>Province</th><th>Lockers</th>
+                    <th>Operating</th><th>24/7</th><th>Density</th>
+                </tr></thead>
+                <tbody>${districts.map(d => `<tr>
+                    <td class="district-rank">${d.rank}</td>
+                    <td>${d.name}</td>
+                    <td style="font-weight:700;color:var(--accent)">${d.total.toLocaleString()}</td>
+                    <td>${d.operating_pct}%</td>
+                    <td>${d.a247_pct}%</td>
+                    <td style="min-width:120px"><div class="district-bar"><div class="district-bar-fill" style="width:${Math.round(d.total/maxTotal*100)}%"></div></div></td>
+                </tr>`).join('')}</tbody>
+            </table>`;
+        } catch (err) { console.error('District ranking failed:', err); }
+    }
+
+    // ── CSV Export ──
+    document.getElementById('btn-export-csv').addEventListener('click', () => {
+        const points = MapModule.getPoints();
+        if (!points.length) return;
+
+        const headers = ['Name','Country','Status','City','Street','Building','PostCode','Province','Latitude','Longitude','24/7','Payment','EasyAccess','Type','OpeningHours'];
+        const rows = points.map(p => {
+            const a = p.address_details || {};
+            const l = p.location || {};
+            return [
+                p.name, p.country, p.status,
+                a.city, a.street, a.building_number, a.post_code, a.province,
+                l.latitude, l.longitude,
+                p.location_247 ? 'Yes' : 'No',
+                p.payment_available ? 'Yes' : 'No',
+                p.easy_access_zone ? 'Yes' : 'No',
+                p.location_type,
+                (p.opening_hours || '').replace(/,/g, ';'),
+            ].map(v => `"${(v ?? '').toString().replace(/"/g, '""')}"`).join(',');
+        });
+
+        const csv = [headers.join(','), ...rows].join('\n');
+        const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `inpost_lockers_${new Date().toISOString().slice(0,10)}.csv`;
+        a.click(); URL.revokeObjectURL(url);
+    });
+
+    // ── PNG Export (charts) ──
+    document.querySelectorAll('.chart-card').forEach(card => {
+        const canvas = card.querySelector('canvas');
+        if (!canvas) return;
+        const h3 = card.querySelector('h3');
+        if (!h3) return;
+        const btn = document.createElement('button');
+        btn.className = 'btn-export';
+        btn.innerHTML = '📸 PNG';
+        btn.title = 'Export chart as PNG';
+        btn.style.marginLeft = 'auto';
+        btn.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = `inpost_${canvas.id || 'chart'}.png`;
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+        // Wrap h3 and btn in header
+        const header = document.createElement('div');
+        header.className = 'chart-card-header';
+        h3.parentNode.insertBefore(header, h3);
+        header.appendChild(h3);
+        header.appendChild(btn);
+    });
 
     // ── Map + Filters ──
     MapModule.init();
