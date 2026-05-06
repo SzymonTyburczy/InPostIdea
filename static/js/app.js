@@ -1,10 +1,13 @@
 /**
  * App — main entry point, wires everything together.
+ * Polls /api/status for loading progress, then loads data.
  */
 document.addEventListener('DOMContentLoaded', () => {
     const overlay = document.getElementById('loading-overlay');
     const loadingText = document.getElementById('loading-text');
     const loadingSubtext = document.getElementById('loading-subtext');
+    const progressBar = document.getElementById('progress-bar');
+    const progressPct = document.getElementById('progress-pct');
     const statusDot = document.querySelector('.status-dot');
     const statusText = document.querySelector('.status-text');
 
@@ -48,10 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
     MapModule.init();
 
     async function loadMapData(filters = {}) {
-        loadingText.textContent = 'Loading locker data...';
-        loadingSubtext.textContent = 'This may take a moment for the first load';
-        overlay.classList.remove('hidden');
-
         try {
             const params = {
                 country: filters.country || 'PL',
@@ -73,8 +72,6 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Failed to load points:', err);
             statusText.textContent = 'Error loading data';
             Filters.setResultsCount(0);
-        } finally {
-            overlay.classList.add('hidden');
         }
     }
 
@@ -82,6 +79,46 @@ document.addEventListener('DOMContentLoaded', () => {
         loadMapData(filters);
     });
 
-    // Initial load
-    loadMapData(Filters.getFilters());
+    // ── Progress polling ──
+    // Poll /api/status until backend pre-fetch is done, then load map
+    async function pollAndLoad() {
+        loadingText.textContent = 'Connecting to InPost API...';
+        loadingSubtext.textContent = 'Pre-fetching locker data on server startup';
+
+        const poll = setInterval(async () => {
+            try {
+                const res = await fetch('/api/status');
+                const status = await res.json();
+
+                // Update progress bar
+                progressBar.style.width = status.progress + '%';
+                progressPct.textContent = status.progress + '%';
+                loadingSubtext.textContent = status.message;
+
+                if (status.status === 'loading') {
+                    loadingText.textContent = `Fetching locker data...`;
+                }
+
+                if (status.status === 'ready' || status.status === 'error') {
+                    clearInterval(poll);
+
+                    if (status.status === 'ready') {
+                        loadingText.textContent = 'Rendering map...';
+                        progressBar.style.width = '100%';
+                        progressPct.textContent = '100%';
+                    }
+
+                    // Small delay for visual satisfaction
+                    await new Promise(r => setTimeout(r, 300));
+                    await loadMapData(Filters.getFilters());
+                    overlay.classList.add('hidden');
+                }
+            } catch (err) {
+                // API not ready yet, keep polling
+                loadingSubtext.textContent = 'Waiting for server...';
+            }
+        }, 500);
+    }
+
+    pollAndLoad();
 });

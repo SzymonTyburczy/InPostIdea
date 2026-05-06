@@ -55,7 +55,10 @@ async def fetch_page(
             return []
 
 
-async def fetch_all_points(country: Optional[str] = None) -> list[dict]:
+async def fetch_all_points(
+    country: Optional[str] = None,
+    progress_callback=None,
+) -> list[dict]:
     """
     Fetch ALL points from the InPost API using parallel pagination.
     
@@ -80,13 +83,26 @@ async def fetch_all_points(country: Optional[str] = None) -> list[dict]:
         first_page_items = data.get("items", [])
 
         logger.info(f"Total points: {total_count}, pages: {total_pages}")
+        if progress_callback:
+            progress_callback(1, total_pages)
 
         if total_pages <= 1:
             return first_page_items
 
+        # Track progress with a wrapper
+        fetched_count = 1
+
+        async def fetch_page_with_progress(page):
+            nonlocal fetched_count
+            result = await fetch_page(client, semaphore, page, country)
+            fetched_count += 1
+            if progress_callback:
+                progress_callback(fetched_count, total_pages)
+            return result
+
         # Fetch remaining pages in parallel (with concurrency limit)
         tasks = [
-            fetch_page(client, semaphore, page, country)
+            fetch_page_with_progress(page)
             for page in range(2, total_pages + 1)
         ]
 

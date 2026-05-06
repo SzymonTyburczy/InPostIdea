@@ -6,6 +6,7 @@ Main entry point. Serves:
 - Static frontend files (map, analytics dashboard)
 """
 
+import asyncio
 import logging
 import math
 from contextlib import asynccontextmanager
@@ -33,12 +34,58 @@ TEMPLATES_DIR = BASE_DIR / "templates"
 CACHE_KEY_POINTS = "all_points"
 CACHE_KEY_ANALYTICS = "analytics"
 
+# Global loading state for frontend progress polling
+loading_state = {
+    "status": "idle",  # idle, loading, ready, error
+    "progress": 0,
+    "total_pages": 0,
+    "fetched_pages": 0,
+    "total_points": 0,
+    "message": "Waiting to start...",
+}
+
+
+async def prefetch_data():
+    """Background task: pre-fetch Poland data on startup."""
+    global loading_state
+    try:
+        loading_state["status"] = "loading"
+        loading_state["message"] = "Connecting to InPost API..."
+        logger.info("Pre-fetching Poland data in background...")
+
+        points = await fetch_all_points(
+            country="PL",
+            progress_callback=update_loading_progress,
+        )
+        cache.set(f"{CACHE_KEY_POINTS}_PL", points, ttl=1800)  # 30 min cache
+
+        analytics = compute_analytics(points)
+        cache.set(f"{CACHE_KEY_ANALYTICS}_PL", analytics, ttl=1800)
+
+        loading_state["status"] = "ready"
+        loading_state["total_points"] = len(points)
+        loading_state["progress"] = 100
+        loading_state["message"] = f"Ready! {len(points):,} lockers loaded."
+        logger.info(f"Pre-fetch complete: {len(points)} points cached.")
+    except Exception as e:
+        loading_state["status"] = "error"
+        loading_state["message"] = f"Error: {e}"
+        logger.error(f"Pre-fetch failed: {e}")
+
+
+def update_loading_progress(fetched: int, total: int):
+    """Callback for api_client to report pagination progress."""
+    loading_state["fetched_pages"] = fetched
+    loading_state["total_pages"] = total
+    loading_state["progress"] = int((fetched / max(total, 1)) * 100)
+    loading_state["message"] = f"Fetching page {fetched}/{total}..."
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Pre-fetch data on startup so first request is fast."""
+    """Pre-fetch data on startup so first request is instant."""
     logger.info("Starting InPost Locator Pro...")
-    logger.info("Background data fetch will happen on first request.")
+    asyncio.create_task(prefetch_data())
     yield
     logger.info("Shutting down...")
 
@@ -64,7 +111,7 @@ async def get_all_points_cached(country: Optional[str] = None) -> list[dict]:
 
     logger.info(f"Cache miss for {cache_key}, fetching from API...")
     points = await fetch_all_points(country=country)
-    cache.set(cache_key, points, ttl=600)  # 10 min
+    cache.set(cache_key, points, ttl=1800)  # 30 min
     return points
 
 
@@ -198,6 +245,12 @@ async def api_cities(
     
     result.sort(key=lambda c: c["count"], reverse=True)
     return {"cities": result[:50]}
+
+
+@app.get("/api/status")
+async def api_status():
+    """Loading progress endpoint — polled by frontend during startup."""
+    return loading_state
 
 
 @app.get("/api/health")

@@ -3,7 +3,7 @@
 > **Smart finder & distribution analytics** for InPost's European parcel locker network.  
 > Built with **FastAPI** + **Leaflet.js** + **Chart.js** — a full-stack web application that turns 34,000+ Polish locker data points into an interactive, filterable map and a real-time analytics dashboard.
 
-![Map View](screenshots/map_view.png)
+![Map View](screenshots/stats_and_controls.png)
 
 ---
 
@@ -23,10 +23,14 @@ On top of that, I added a **distribution analytics dashboard** — because once 
 
 ### 🗺️ Smart Finder (Map View)
 - **Interactive clustered map** — 34,000+ markers rendered efficiently with Leaflet.js marker clustering
+- **🔥 Heatmap mode** — toggle between markers and density heatmap visualization
 - **Multi-criteria filtering** — filter by 24/7 access, payment availability, easy access zone, indoor/outdoor, operational status
 - **City search with autocomplete** — type a city name, fly to it instantly
 - **Geolocation** — "Find near me" button using browser GPS
-- **Detail panel** — click any locker to see its full details: address, photo, opening hours, locker size availability (A/B/C), supported functions
+- **📏 Distance & travel time** — after geolocating, see walking and driving time estimates to each locker
+- **⚖️ Comparison mode** — select up to 3 lockers and compare features side by side
+- **Detail panel** — click any locker to see photo, address, opening hours, locker availability (A/B/C), and a "Navigate with Google Maps" button
+- **Live stats bar** — real-time counters (Total / Operating / 24/7 / Indoor) on the map
 - **Country switching** — view Poland, Italy, Spain, or all of Europe
 
 ### 📊 Distribution Analytics Dashboard
@@ -37,7 +41,12 @@ On top of that, I added a **distribution analytics dashboard** — because once 
 - **Indoor vs Outdoor** — doughnut chart of location types
 - **Country breakdown** — when viewing all countries
 
-![Analytics Dashboard](screenshots/analytics_view.png)
+### ⚡ Performance
+- **Pre-fetch on startup** — data loads in the background when the server starts
+- **Progress bar** — real-time loading progress with page counter
+- **30-min cache** — subsequent requests are instant
+
+![Comparison Panel](screenshots/comparison_panel.png)
 
 ---
 
@@ -57,7 +66,8 @@ On top of that, I added a **distribution analytics dashboard** — because once 
 │  ├── /api/points/nearby — proximity search  │
 │  ├── /api/analytics — aggregated stats      │
 │  ├── /api/cities — autocomplete endpoint    │
-│  └── In-memory cache (10 min TTL)           │
+│  ├── /api/status — loading progress poll    │
+│  └── In-memory cache (30 min TTL)           │
 └──────────────────┬──────────────────────────┘
                    │ httpx (async)
 ┌──────────────────▼──────────────────────────┐
@@ -72,10 +82,12 @@ On top of that, I added a **distribution analytics dashboard** — because once 
 |----------|-----------|
 | **FastAPI** over Flask | Async-native, built-in OpenAPI docs, Pydantic validation, modern Python |
 | **Backend proxy** instead of direct API calls from frontend | CORS avoidance, caching (API is slow for 34k points), data aggregation server-side, smaller payloads to client |
-| **In-memory cache with TTL** | Simple, no external dependency (Redis would be overkill for a single-instance app). 10-min TTL balances freshness vs API load |
+| **In-memory cache with TTL** | Simple, no external dependency (Redis would be overkill for a single-instance app). 30-min TTL balances freshness vs API load |
 | **Parallel pagination with semaphore** | The InPost API paginates at 1000/page max. Fetching 35 pages sequentially would take ~30s. Parallel fetch with 10 concurrent requests brings it to ~3s |
+| **Pre-fetch on startup** | Data loads in the background when the server starts. Frontend polls `/api/status` and shows a progress bar |
 | **Field selection** via `fields` query param | Reduces payload from InPost API by ~60%. We only fetch the 16 fields we need, not all 50+ |
 | **Leaflet + MarkerCluster** over Google Maps | Free, open-source, no API key needed. MarkerCluster handles 34k markers without performance issues |
+| **Haversine distance** for travel estimates | Client-side calculation — no external API needed. Walk time at 5 km/h, drive at 30 km/h city average |
 | **Vanilla JS** instead of React/Vue | Zero build step for frontend. The app is small enough that a framework adds complexity without proportional benefit |
 | **Chart.js** over D3/Plotly | Lightweight (70kB), beautiful defaults, perfect for dashboard charts. D3 would be overkill |
 
@@ -91,7 +103,10 @@ On top of that, I added a **distribution analytics dashboard** — because once 
 | ASGI Server | Uvicorn | 0.34 |
 | Map | Leaflet.js | 1.9.4 |
 | Clustering | Leaflet.MarkerCluster | 1.5.3 |
+| Heatmap | Leaflet.heat | 0.2.0 |
 | Charts | Chart.js | 4.4.7 |
+| Container | Docker | — |
+| CI/CD | GitHub Actions | — |
 | Typography | Inter (Google Fonts) | — |
 | Map Tiles | CARTO Dark | — |
 | Testing | pytest | 8.3 |
@@ -129,7 +144,16 @@ python run.py
 
 The app starts at **http://localhost:8000**.
 
-> **⏳ First load takes ~5-10 seconds** — the backend fetches ~34,000 points from the InPost API using parallel pagination. Subsequent requests are served from cache (10-min TTL).
+> **⚡ Data pre-fetches on startup** — the backend immediately begins loading ~34,000 points from the InPost API. The frontend shows a progress bar while it loads. Subsequent requests are served from cache (30-min TTL).
+
+### Docker (Alternative)
+
+```bash
+# One-command startup
+docker-compose up --build
+```
+
+The app will be available at **http://localhost:8000**.
 
 ### Run Tests
 
@@ -169,7 +193,7 @@ FastAPI auto-generates OpenAPI docs. With the server running, visit:
 InPostIdea/
 ├── app/
 │   ├── __init__.py
-│   ├── main.py            # FastAPI app — routes, static files, startup
+│   ├── main.py            # FastAPI app — routes, pre-fetch, progress tracking
 │   ├── api_client.py      # Async InPost API client with parallel pagination
 │   ├── cache.py           # In-memory TTL cache
 │   └── analytics.py       # Data aggregation engine
@@ -178,18 +202,24 @@ InPostIdea/
 │   │   └── style.css      # Full design system — dark theme, responsive
 │   └── js/
 │       ├── api.js          # Frontend API client
-│       ├── map.js          # Leaflet map + clustering + detail panel
+│       ├── map.js          # Map + clustering + heatmap + distance + comparison
 │       ├── filters.js      # Sidebar filters + city search + geolocation
 │       ├── analytics.js    # Chart.js dashboard
-│       └── app.js          # App orchestrator — wires everything together
+│       └── app.js          # App orchestrator + progress polling
 ├── templates/
 │   └── index.html          # Single-page HTML with both views
 ├── tests/
 │   ├── test_cache.py       # 5 unit tests for cache module
 │   └── test_analytics.py   # 8 unit tests for analytics engine
+├── .github/
+│   └── workflows/
+│       └── ci.yml          # GitHub Actions CI pipeline
 ├── screenshots/            # Screenshots for README
-├── requirements.txt        # Python dependencies (pinned versions)
-├── run.py                  # Uvicorn entry point with hot-reload
+├── Dockerfile              # Docker image definition
+├── docker-compose.yml      # One-command startup
+├── render.yaml             # Render.com deployment blueprint
+├── requirements.txt        # Python dependencies
+├── run.py                  # Uvicorn entry point
 ├── .gitignore
 └── README.md
 ```
@@ -198,13 +228,18 @@ InPostIdea/
 
 ## 📸 Screenshots
 
-### Map View — Poland Overview
-33,334 lockers clustered on a dark-themed interactive map with filter sidebar.
+### Map View — Live Stats + Controls
+34,005 lockers with real-time stats bar and Markers/Heatmap toggle.
 
-![Map View](screenshots/map_view.png)
+![Stats Bar](screenshots/stats_and_controls.png)
+
+### Comparison Mode + Detail Panel
+Select lockers, compare features side-by-side, see walking/driving distance.
+
+![Comparison](screenshots/comparison_panel.png)
 
 ### Map View — Warsaw Zoomed
-Individual lockers become visible as you zoom in. Green dots = operating, red = non-operating.
+Individual lockers visible at street level. Green = operating, red = non-operating.
 
 ![Warsaw Zoom](screenshots/warsaw_zoom.png)
 
@@ -231,13 +266,14 @@ KPI cards, province bar chart, top cities, status/location type doughnuts.
 
 ## 🔮 What I'd Add With More Time
 
-- **Heatmap layer** — density visualization instead of markers
-- **Route planning** — "show me lockers on my daily commute"
-- **Comparison mode** — select 2-3 lockers and compare features side by side
+- ~~**Heatmap layer**~~ ✅ Implemented
+- ~~**Comparison mode**~~ ✅ Implemented  
+- ~~**Docker containerization**~~ ✅ Implemented
+- ~~**CI/CD pipeline**~~ ✅ Implemented
+- **Route planning** — "show me lockers on my daily commute" using waypoints
 - **Availability alerts** — notify when a frequently-full locker has space
-- **Docker containerization** — `docker-compose up` for one-command startup
-- **CI/CD pipeline** — GitHub Actions for tests + linting
 - **Persistent cache** — Redis for multi-instance deployments
+- **Full routing API** — real travel times via OSRM or Google Directions API (currently using Haversine estimates)
 
 ---
 

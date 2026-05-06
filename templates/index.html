@@ -150,6 +150,26 @@
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
         </button>
 
+        <!-- Map Controls Bar -->
+        <div class="map-controls" id="map-controls">
+            <button class="map-ctrl-btn active" id="btn-markers" title="Markers view">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                Markers
+            </button>
+            <button class="map-ctrl-btn" id="btn-heatmap" title="Heatmap view">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+                Heatmap
+            </button>
+        </div>
+
+        <!-- Live Stats Bar -->
+        <div class="stats-bar" id="stats-bar">
+            <div class="stat-item"><span class="stat-value" id="stat-total">—</span><span class="stat-label">Total</span></div>
+            <div class="stat-item"><span class="stat-value" id="stat-operating">—</span><span class="stat-label">Operating</span></div>
+            <div class="stat-item"><span class="stat-value" id="stat-247">—</span><span class="stat-label">24/7</span></div>
+            <div class="stat-item"><span class="stat-value" id="stat-indoor">—</span><span class="stat-label">Indoor</span></div>
+        </div>
+
         <!-- Map Container -->
         <div id="map" class="map-container"></div>
 
@@ -158,9 +178,18 @@
             <button class="btn-icon detail-close" id="detail-close">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </button>
-            <div class="detail-content" id="detail-content">
-                <!-- Populated by JS -->
+            <div class="detail-content" id="detail-content"></div>
+        </div>
+
+        <!-- Comparison Panel -->
+        <div class="compare-panel" id="compare-panel">
+            <div class="compare-header">
+                <h3>⚖️ Compare Lockers</h3>
+                <button class="btn-icon" id="compare-close">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </button>
             </div>
+            <div class="compare-body" id="compare-body"></div>
         </div>
     </main>
 
@@ -251,12 +280,17 @@
             <div class="spinner-ring"></div>
             <p class="loading-text" id="loading-text">Loading InPost data...</p>
             <p class="loading-subtext" id="loading-subtext">Fetching locker data across Europe</p>
+            <div class="progress-bar-container" id="progress-container">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
+            <p class="progress-pct" id="progress-pct">0%</p>
         </div>
     </div>
 
     <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script src="/static/js/api.js"></script>
     <script src="/static/js/map.js"></script>
