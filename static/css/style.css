@@ -499,19 +499,125 @@ body.light-theme .loading-overlay { background: #f0f2f5; }
     font-family: var(--font) !important; font-weight: 700 !important;
 }
 
-/* ── Responsive ── */
-@media (max-width: 768px) {
-    .sidebar { width: 100%; }
-    .fab { display: flex; }
-    .sidebar { transform: translateX(-100%); }
-    .sidebar.open { transform: translateX(0); }
-    .detail-panel { width: 100%; }
-    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
-    .charts-grid { grid-template-columns: 1fr; }
-    .chart-card.chart-wide { grid-column: span 1; }
-    .navbar-status .status-text { display: none; }
-    .stats-bar { bottom: 80px; }
-    .map-controls { top: 8px; right: 8px; }
-    .stat-item { padding: 4px 10px; }
-    .stat-value { font-size: 0.9rem; }
+/* ── Responsive: Tablet ── */
+@media (max-width: 1024px) {
+    .nearest-panel { left: 0; width: 100%; z-index: 495; }
+    .compare-panel { left: 0; }
+    .city-compare-grid { grid-template-columns: 1fr; }
 }
+
+/* ── Responsive: Mobile ── */
+@media (max-width: 768px) {
+    :root { --navbar-h: 52px; }
+
+    /* Navbar — compact */
+    .navbar { padding: 0 12px; gap: 8px; }
+    .navbar-brand .brand-text { display: none; }
+    .nav-tab span { display: none; }
+    .nav-tab { padding: 8px 12px; }
+    .navbar-status .status-text { display: none; }
+    .navbar-actions { margin-left: auto; }
+    .theme-toggle { width: 32px; height: 32px; font-size: 0.95rem; }
+
+    /* Sidebar — full-screen overlay on mobile */
+    .sidebar {
+        width: 100%; top: 0; bottom: 0; z-index: 600;
+        transform: translateX(-100%);
+    }
+    .sidebar.open { transform: translateX(0); }
+    .fab { display: flex; }
+
+    /* Detail panel — bottom sheet on mobile */
+    .detail-panel {
+        width: 100%; top: 35%; bottom: 0; right: 0;
+        transform: translateY(100%);
+        border-left: none; border-top: 1px solid var(--border);
+        border-radius: 16px 16px 0 0;
+    }
+    .detail-panel.open { transform: translateY(0); }
+    .detail-panel::before {
+        content: ''; display: block; width: 40px; height: 4px;
+        background: var(--text-muted); border-radius: 2px;
+        margin: 8px auto 4px;
+    }
+    #detail-content { padding: 12px 16px 24px; }
+    .detail-img { max-height: 140px; }
+
+    /* Nearest panel — bottom sheet */
+    .nearest-panel {
+        position: fixed; left: 0; right: 0; bottom: 0; top: auto;
+        width: 100%; height: 50vh; z-index: 550;
+        border-right: none; border-top: 1px solid var(--border);
+        border-radius: 16px 16px 0 0;
+        transform: translateY(100%);
+    }
+    .nearest-panel.open { transform: translateY(0); }
+
+    /* Comparison panel — stacked */
+    .compare-panel {
+        left: 0; right: 0; bottom: 0; height: auto; max-height: 55vh;
+        overflow-y: auto; border-radius: 16px 16px 0 0;
+    }
+    .compare-body { flex-direction: column; gap: 12px; padding: 12px; }
+    .compare-col { min-width: auto; }
+    .compare-header { padding: 10px 16px; }
+
+    /* Stats bar — compact */
+    .stats-bar {
+        bottom: 0; left: 0; right: 0; border-radius: 0;
+        padding: 6px 8px; gap: 4px; justify-content: space-around;
+    }
+    .stat-item { padding: 4px 8px; }
+    .stat-value { font-size: 0.8rem; }
+    .stat-label { font-size: 0.55rem; }
+
+    /* Map controls — repositioned */
+    .map-controls {
+        top: 8px; right: 8px; gap: 4px; padding: 4px;
+    }
+    .map-controls .btn { padding: 6px 10px; font-size: 0.7rem; }
+
+    /* Analytics — single column */
+    .analytics-container { padding: 16px; }
+    .analytics-header h1 { font-size: 1.3rem; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .kpi-card { padding: 14px; }
+    .kpi-value { font-size: 1.4rem; }
+    .charts-grid { grid-template-columns: 1fr; gap: 16px; }
+    .chart-card { padding: 16px; }
+    .chart-card.chart-wide { grid-column: span 1; }
+
+    /* City comparison — single column */
+    .city-compare-header { flex-direction: column; align-items: stretch; gap: 8px; }
+    .city-compare-header .select { width: 100%; }
+    .city-compare-grid { grid-template-columns: 1fr; }
+
+    /* District ranking — scrollable */
+    .district-section { overflow-x: auto; }
+    .district-table { min-width: 500px; }
+    .district-table th, .district-table td { padding: 8px; font-size: 0.8rem; }
+
+    /* Detail action buttons — wrap */
+    .detail-actions { flex-wrap: wrap; }
+    .detail-actions .action-btn { flex: 1 1 calc(50% - 4px); min-width: 80px; }
+
+    /* Loading overlay */
+    .loading-spinner { padding: 0 24px; }
+    .loading-spinner p { font-size: 0.9rem; }
+
+    /* Locker search */
+    .locker-search-results { max-height: 160px; }
+}
+
+/* ── Responsive: Small phones ── */
+@media (max-width: 400px) {
+    .navbar { padding: 0 8px; gap: 6px; }
+    .kpi-grid { grid-template-columns: 1fr; }
+    .stats-bar { flex-wrap: wrap; }
+    .stat-item { flex: 1 1 auto; }
+    .detail-panel { top: 25%; }
+    .compare-panel { max-height: 65vh; }
+    .analytics-header h1 { font-size: 1.1rem; }
+    .analytics-subtitle { font-size: 0.8rem; }
+}
+
