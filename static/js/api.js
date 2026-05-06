@@ -1,0 +1,37 @@
+/**
+ * API client — communicates with our FastAPI backend.
+ */
+const API = {
+    BASE: '',
+
+    async getPoints(params = {}) {
+        const qs = new URLSearchParams();
+        Object.entries(params).forEach(([k, v]) => {
+            if (v !== null && v !== undefined && v !== '') qs.set(k, v);
+        });
+        const res = await fetch(`${this.BASE}/api/points?${qs}`);
+        if (!res.ok) throw new Error(`API error: ${res.status}`);
+        return res.json();
+    },
+
+    async getNearby(lat, lng, limit = 20) {
+        const res = await fetch(`${this.BASE}/api/points/nearby?lat=${lat}&lng=${lng}&limit=${limit}`);
+        if (!res.ok) throw new Error(`API error: ${res.status}`);
+        return res.json();
+    },
+
+    async getAnalytics(country = '') {
+        const qs = country ? `?country=${country}` : '';
+        const res = await fetch(`${this.BASE}/api/analytics${qs}`);
+        if (!res.ok) throw new Error(`API error: ${res.status}`);
+        return res.json();
+    },
+
+    async getCities(country = 'PL', q = '') {
+        const qs = new URLSearchParams({ country });
+        if (q) qs.set('q', q);
+        const res = await fetch(`${this.BASE}/api/cities?${qs}`);
+        if (!res.ok) throw new Error(`API error: ${res.status}`);
+        return res.json();
+    },
+};
